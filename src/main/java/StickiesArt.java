@@ -12,7 +12,7 @@ import java.util.Random;
 @ExtensionInfo(
         Title = "StickiesArt",
         Description = "Art with stickies created with love",
-        Version = "1.0",
+        Version = "1.1",
         Author = "DanielaNaomi"
 )
 

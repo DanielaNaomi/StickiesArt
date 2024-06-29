@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.text.Text?>
+
+<AnchorPane prefHeight="181.0" prefWidth="562.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="StickiesArt">
+   <children>
+      <TextField fx:id="text" layoutX="109.0" layoutY="43.0" prefHeight="25.0" prefWidth="286.0" />
+      <Text layoutX="54.0" layoutY="60.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Prompt" />
+      <TextField fx:id="wbase" layoutX="109.0" layoutY="80.0" prefHeight="25.0" prefWidth="95.0" text="0,0" />
+      <Text layoutX="63.0" layoutY="97.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Base w" />
+      <Text layoutX="63.0" layoutY="132.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Base l" />
+      <TextField fx:id="lbase" layoutX="109.0" layoutY="115.0" prefHeight="25.0" prefWidth="95.0" text="0,0" />
+      <Button fx:id="buttongoart" layoutX="388.0" layoutY="93.0" mnemonicParsing="false" onAction="#handlegoart" prefHeight="50.0" prefWidth="111.0" text="Go Art" />
+      <Button fx:id="buttondisorganizeall" layoutX="226.0" layoutY="93.0" mnemonicParsing="false" onAction="#handledisorganizeall" prefHeight="50.0" prefWidth="145.0" text="Disorganize all" />
+   </children>
+</AnchorPane>

@@ -5,6 +5,9 @@ import gearth.protocol.HMessage;
 import gearth.protocol.HPacket;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
+import javafx.scene.input.KeyEvent;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Random;
@@ -12,14 +15,17 @@ import java.util.Random;
 @ExtensionInfo(
         Title = "StickiesArt",
         Description = "Art with stickies created with love",
-        Version = "1.1",
+        Version = "1.2",
         Author = "DanielaNaomi"
 )
 
 public class StickiesArt extends ExtensionForm {
     public TextField text;
-    public TextField wbase;
-    public TextField lbase;
+    public TextField basew1;
+    public TextField basew2;
+    public TextField basel1;
+    public TextField basel2;
+    public TextField increment;
     public Button buttongoart;
     public LinkedList<Integer> items = new LinkedList<>();
     public Button buttondisorganizeall;
@@ -47,6 +53,35 @@ public class StickiesArt extends ExtensionForm {
         });
         intercept(HMessage.Direction.TOCLIENT, "Items", this::Items);
         intercept(HMessage.Direction.TOSERVER, "OpenFlatConnection", this::OpenFlatConnection);
+
+        setTextFieldNumeric(basew1);
+        setTextFieldNumeric(basew2);
+        setTextFieldNumeric(basel1);
+        setTextFieldNumeric(basel2);
+        setTextFieldNumeric(increment);
+
+        setTextFieldDefault(basew1, "0");
+        setTextFieldDefault(basew2, "0");
+        setTextFieldDefault(basel1, "0");
+        setTextFieldDefault(basel2, "0");
+        setTextFieldDefault(increment, "2");
+    }
+
+    private void setTextFieldNumeric(TextField textField) {
+        textField.addEventFilter(KeyEvent.KEY_TYPED, keyEvent -> {
+            String character = keyEvent.getCharacter();
+            if (!character.matches("[0-9-]") || (character.equals("-") && textField.getText().contains("-"))) {
+                keyEvent.consume();
+            }
+        });
+    }
+
+    private void setTextFieldDefault(TextField textField, String defaultValue) {
+        textField.focusedProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue && textField.getText().isEmpty()) {
+                textField.setText(defaultValue);
+            }
+        });
     }
 
     private void OpenFlatConnection(HMessage hMessage) {
@@ -66,25 +101,23 @@ public class StickiesArt extends ExtensionForm {
 
     public void handlegoart() {
         String inputText = text.getText();
-        String[] wbaseParts = wbase.getText().split(",");
-        String[] lbaseParts = lbase.getText().split(",");
 
-        if (wbaseParts.length != 2 || lbaseParts.length != 2) {
-            System.err.println("Base dimensions are not correctly formatted.");
-            return;
+        try {
+            int baseW1 = Integer.parseInt(basew1.getText());
+            int baseW2 = Integer.parseInt(basew2.getText());
+            int baseL1 = Integer.parseInt(basel1.getText());
+            int baseL2 = Integer.parseInt(basel2.getText());
+            int incrementValue = Integer.parseInt(increment.getText());
+
+            new Thread(() -> {
+                handlegoart(inputText, baseW1, baseW2, baseL1, baseL2, incrementValue);
+            }).start();
+        } catch (NumberFormatException e) {
+            System.err.println("Error parsing base dimensions or increment: " + e.getMessage());
         }
-
-        int baseW1 = Integer.parseInt(wbaseParts[0].trim());
-        int baseW2 = Integer.parseInt(wbaseParts[1].trim());
-        int baseL1 = Integer.parseInt(lbaseParts[0].trim());
-        int baseL2 = Integer.parseInt(lbaseParts[1].trim());
-
-        new Thread(() -> {
-            handlegoart(inputText, baseW1, baseW2, baseL1, baseL2);
-        }).start();
     }
 
-    public void handlegoart(String text, int baseW1, int baseW2, int baseL1, int baseL2) {
+    public void handlegoart(String text, int baseW1, int baseW2, int baseL1, int baseL2, int incrementValue) {
         int offsetW2 = 0;
         int itemIndex = 0;
 
@@ -123,7 +156,7 @@ public class StickiesArt extends ExtensionForm {
                     }
                 }
             }
-            offsetW2 -= 2;
+            offsetW2 -= incrementValue;
         }
     }
 

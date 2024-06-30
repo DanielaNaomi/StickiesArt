@@ -5,15 +5,19 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.text.Text?>
 
-<AnchorPane prefHeight="181.0" prefWidth="562.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="StickiesArt">
+<AnchorPane prefHeight="226.0" prefWidth="485.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="StickiesArt">
    <children>
       <TextField fx:id="text" layoutX="109.0" layoutY="43.0" prefHeight="25.0" prefWidth="286.0" />
       <Text layoutX="54.0" layoutY="60.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Prompt" />
-      <TextField fx:id="wbase" layoutX="109.0" layoutY="80.0" prefHeight="25.0" prefWidth="95.0" text="0,0" />
       <Text layoutX="63.0" layoutY="97.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Base w" />
       <Text layoutX="63.0" layoutY="132.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Base l" />
-      <TextField fx:id="lbase" layoutX="109.0" layoutY="115.0" prefHeight="25.0" prefWidth="95.0" text="0,0" />
-      <Button fx:id="buttongoart" layoutX="388.0" layoutY="93.0" mnemonicParsing="false" onAction="#handlegoart" prefHeight="50.0" prefWidth="111.0" text="Go Art" />
-      <Button fx:id="buttondisorganizeall" layoutX="226.0" layoutY="93.0" mnemonicParsing="false" onAction="#handledisorganizeall" prefHeight="50.0" prefWidth="145.0" text="Disorganize all" />
+      <Button fx:id="buttongoart" layoutX="347.0" layoutY="160.0" mnemonicParsing="false" onAction="#handlegoart" prefHeight="50.0" prefWidth="96.0" text="Go Art" />
+      <Button fx:id="buttondisorganizeall" layoutX="196.0" layoutY="160.0" mnemonicParsing="false" onAction="#handledisorganizeall" prefHeight="50.0" prefWidth="128.0" text="Disorganize all" />
+      <TextField fx:id="basew1" layoutX="109.0" layoutY="81.0" prefHeight="25.0" prefWidth="66.0" text="0" />
+      <TextField fx:id="basew2" layoutX="186.0" layoutY="81.0" prefHeight="25.0" prefWidth="66.0" text="0" />
+      <TextField fx:id="basel1" layoutX="109.0" layoutY="115.0" prefHeight="25.0" prefWidth="66.0" text="0" />
+      <TextField fx:id="basel2" layoutX="186.0" layoutY="115.0" prefHeight="25.0" prefWidth="66.0" text="0" />
+      <Text layoutX="27.0" layoutY="189.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Increment" />
+      <TextField fx:id="increment" layoutX="94.0" layoutY="172.0" prefHeight="25.0" prefWidth="66.0" text="2" />
    </children>
 </AnchorPane>

@@ -6,16 +6,16 @@ import gearth.protocol.HPacket;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyEvent;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Random;
+import java.util.Set;
 
 @ExtensionInfo(
         Title = "StickiesArt",
         Description = "Art with stickies created with love",
-        Version = "1.2",
+        Version = "1.3",
         Author = "DanielaNaomi"
 )
 
@@ -28,6 +28,8 @@ public class StickiesArt extends ExtensionForm {
     public TextField increment;
     public Button buttongoart;
     public LinkedList<Integer> items = new LinkedList<>();
+    public LinkedList<Integer> usedItems = new LinkedList<>();
+    public Set<Integer> usedItemsSet = new HashSet<>();
     public Button buttondisorganizeall;
     public int uniqueId = -1;
     private static final HashMap<String, Integer> host_postit = new HashMap<>();
@@ -86,6 +88,8 @@ public class StickiesArt extends ExtensionForm {
 
     private void OpenFlatConnection(HMessage hMessage) {
         items.clear();
+        usedItems.clear();
+        usedItemsSet.clear();
     }
 
     private void Items(HMessage hMessage) {
@@ -124,6 +128,10 @@ public class StickiesArt extends ExtensionForm {
         for (char letter : text.toCharArray()) {
             String[] positions = LetterMapper.getLetterMapping(letter);
             for (String position : positions) {
+                while (itemIndex < items.size() && usedItemsSet.contains(items.get(itemIndex))) {
+                    itemIndex++;
+                }
+
                 if (itemIndex >= items.size()) break;
 
                 String[] posParts = position.split(" ");
@@ -143,7 +151,7 @@ public class StickiesArt extends ExtensionForm {
                         int newY = originalY - baseL2;
 
                         HPacket movePacket = new HPacket("MoveWallItem", HMessage.Direction.TOSERVER);
-                        movePacket.appendInt(items.get(itemIndex++));
+                        movePacket.appendInt(items.get(itemIndex));
                         movePacket.appendString(":w=" + newW1 + "," + newW2 + " l=" + newX + "," + newY + " " + lOrR);
                         try {
                             Thread.sleep(125);
@@ -151,6 +159,10 @@ public class StickiesArt extends ExtensionForm {
                             e.printStackTrace();
                         }
                         sendToServer(movePacket);
+
+                        usedItems.add(items.get(itemIndex));
+                        usedItemsSet.add(items.get(itemIndex));
+                        itemIndex++;
                     } catch (NumberFormatException ex) {
                         System.err.println("Error parsing positions: " + ex.getMessage());
                     }
@@ -161,12 +173,12 @@ public class StickiesArt extends ExtensionForm {
     }
 
     public void handledisorganizeall() {
-        LinkedList<Integer> itemsCopy = new LinkedList<>(items);
+        LinkedList<Integer> itemsToDisorganize = usedItems.isEmpty() ? items : new LinkedList<>(usedItems);
 
         new Thread(() -> {
             Random random = new Random();
 
-            for (int itemId : itemsCopy) {
+            for (int itemId : itemsToDisorganize) {
                 int newW1 = random.nextInt(10);
                 int newW2 = random.nextInt(32);
                 int newX = random.nextInt(10);
@@ -182,6 +194,9 @@ public class StickiesArt extends ExtensionForm {
                 }
                 sendToServer(movePacket);
             }
+
+            usedItems.clear();
+            usedItemsSet.clear();
         }).start();
     }
 }

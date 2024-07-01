@@ -14,7 +14,6 @@ public class StickiesArtLauncher extends ExtensionFormCreator {
         primaryStage.setTitle("StickiesArt");
         primaryStage.setScene(new Scene(root));
         primaryStage.setResizable(false);
-        primaryStage.setAlwaysOnTop(true);
         return loader.getController();
     }
 

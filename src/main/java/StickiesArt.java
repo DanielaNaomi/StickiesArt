@@ -4,6 +4,7 @@ import gearth.extensions.parsers.HWallItem;
 import gearth.protocol.HMessage;
 import gearth.protocol.HPacket;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyEvent;
 import java.util.HashMap;
@@ -15,7 +16,7 @@ import java.util.Set;
 @ExtensionInfo(
         Title = "StickiesArt",
         Description = "Art with stickies created with love",
-        Version = "1.3",
+        Version = "1.4",
         Author = "DanielaNaomi"
 )
 
@@ -31,6 +32,7 @@ public class StickiesArt extends ExtensionForm {
     public LinkedList<Integer> usedItems = new LinkedList<>();
     public Set<Integer> usedItemsSet = new HashSet<>();
     public Button buttondisorganizeall;
+    public CheckBox always_on_top_cbx;
     public int uniqueId = -1;
     private static final HashMap<String, Integer> host_postit = new HashMap<>();
 
@@ -67,6 +69,10 @@ public class StickiesArt extends ExtensionForm {
         setTextFieldDefault(basel1, "0");
         setTextFieldDefault(basel2, "0");
         setTextFieldDefault(increment, "2");
+    }
+
+    public void toggleAlwaysOnTop() {
+        primaryStage.setAlwaysOnTop(always_on_top_cbx.isSelected());
     }
 
     private void setTextFieldNumeric(TextField textField) {

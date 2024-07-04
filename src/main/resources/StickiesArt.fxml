@@ -21,5 +21,7 @@
       <Text layoutX="27.0" layoutY="189.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Increment" />
       <TextField fx:id="increment" layoutX="94.0" layoutY="172.0" prefHeight="25.0" prefWidth="66.0" text="2" />
       <CheckBox fx:id="always_on_top_cbx" layoutX="457.0" layoutY="193.0" mnemonicParsing="false" onAction="#toggleAlwaysOnTop" text="Always on top" />
+      <CheckBox fx:id="draw_cbx" layoutX="457.0" layoutY="164.0" mnemonicParsing="false" text="Draw" />
+      <Button fx:id="buttonopenblackboard" layoutX="409.0" layoutY="31.0" mnemonicParsing="false" onAction="#handleopenblackboard" prefHeight="50.0" prefWidth="146.0" text="Open Blackboard" />
    </children>
 </AnchorPane>

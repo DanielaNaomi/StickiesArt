@@ -3,10 +3,18 @@ import gearth.extensions.ExtensionInfo;
 import gearth.extensions.parsers.HWallItem;
 import gearth.protocol.HMessage;
 import gearth.protocol.HPacket;
+import javafx.scene.Node;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseButton;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
+import javafx.stage.Stage;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -16,7 +24,7 @@ import java.util.Set;
 @ExtensionInfo(
         Title = "StickiesArt",
         Description = "Art with stickies created with love",
-        Version = "1.4",
+        Version = "1.5",
         Author = "DanielaNaomi"
 )
 
@@ -48,6 +56,9 @@ public class StickiesArt extends ExtensionForm {
         host_postit.put("game-nl.habbo.com", 4219);
         host_postit.put("game-s2.habbo.com", 4236);
     }
+
+    public CheckBox draw_cbx;
+    public Set<Integer> selectedCells = new HashSet<>();
 
     @Override
     protected void initExtension() {
@@ -120,10 +131,62 @@ public class StickiesArt extends ExtensionForm {
             int incrementValue = Integer.parseInt(increment.getText());
 
             new Thread(() -> {
-                handlegoart(inputText, baseW1, baseW2, baseL1, baseL2, incrementValue);
+                if (draw_cbx.isSelected()) {
+                    handleDrawGrid(baseW1, baseW2, baseL1, baseL2);
+                } else {
+                    handlegoart(inputText, baseW1, baseW2, baseL1, baseL2, incrementValue);
+                }
             }).start();
         } catch (NumberFormatException e) {
             System.err.println("Error parsing base dimensions or increment: " + e.getMessage());
+        }
+    }
+
+    private void handleDrawGrid(int baseW1, int baseW2, int baseL1, int baseL2) {
+        int offsetW2 = 0;
+        int itemIndex = 0;
+
+        for (int index : selectedCells) {
+            while (itemIndex < items.size() && usedItemsSet.contains(items.get(itemIndex))) {
+                itemIndex++;
+            }
+
+            if (itemIndex >= items.size()) break;
+
+            String position = DrawMapper.getCoordinate(index);
+            String[] posParts = position.split(" ");
+            if (posParts.length == 3) {
+                try {
+                    String wPart = posParts[0].split("=")[1];
+                    int originalW1 = Integer.parseInt(wPart.split(",")[0]);
+                    int originalW2 = Integer.parseInt(wPart.split(",")[1]);
+                    int newW1 = originalW1 + baseW1;
+                    int newW2 = originalW2 + baseW2 + offsetW2;
+
+                    String lOrR = posParts[2];
+                    String[] coordinates = posParts[1].split("=")[1].split(",");
+                    int originalX = Integer.parseInt(coordinates[0]);
+                    int originalY = Integer.parseInt(coordinates[1]);
+                    int newX = originalX - baseL1;
+                    int newY = originalY - baseL2;
+
+                    HPacket movePacket = new HPacket("MoveWallItem", HMessage.Direction.TOSERVER);
+                    movePacket.appendInt(items.get(itemIndex));
+                    movePacket.appendString(":w=" + newW1 + "," + newW2 + " l=" + newX + "," + newY + " " + lOrR);
+                    try {
+                        Thread.sleep(125);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    sendToServer(movePacket);
+
+                    usedItems.add(items.get(itemIndex));
+                    usedItemsSet.add(items.get(itemIndex));
+                    itemIndex++;
+                } catch (NumberFormatException ex) {
+                    System.err.println("Error parsing positions: " + ex.getMessage());
+                }
+            }
         }
     }
 
@@ -204,5 +267,78 @@ public class StickiesArt extends ExtensionForm {
             usedItems.clear();
             usedItemsSet.clear();
         }).start();
+    }
+
+    public void handleopenblackboard() {
+        GridPane gridPane = new GridPane();
+
+        for (int i = 0; i < 12; i++) {
+            for (int j = 0; j < 12; j++) {
+                Rectangle cell = new Rectangle(40, 40);
+                cell.setFill(Color.DARKGRAY);
+                cell.setStroke(Color.BLACK);
+                int index = i * 12 + j;
+
+                cell.setOnMousePressed(event -> {
+                    if (event.getButton() == MouseButton.PRIMARY) {
+                        selectedCells.add(index);
+                        cell.setFill(Color.YELLOW);
+                    } else if (event.getButton() == MouseButton.SECONDARY) {
+                        selectedCells.remove(index);
+                        cell.setFill(Color.DARKGRAY);
+                    }
+                });
+
+                cell.setOnMouseDragged(event -> {
+                    if (event.getButton() == MouseButton.PRIMARY) {
+                        selectedCells.add(index);
+                        cell.setFill(Color.YELLOW);
+                    } else if (event.getButton() == MouseButton.SECONDARY) {
+                        selectedCells.remove(index);
+                        cell.setFill(Color.DARKGRAY);
+                    }
+                });
+
+                gridPane.add(cell, j, i);
+            }
+        }
+
+        gridPane.setOnMouseDragged(event -> {
+            Node source = event.getPickResult().getIntersectedNode();
+            if (source instanceof Rectangle) {
+                Rectangle cell = (Rectangle) source;
+                int index = GridPane.getRowIndex(cell) * 12 + GridPane.getColumnIndex(cell);
+                if (event.isPrimaryButtonDown()) {
+                    selectedCells.add(index);
+                    cell.setFill(Color.YELLOW);
+                } else if (event.isSecondaryButtonDown()) {
+                    selectedCells.remove(index);
+                    cell.setFill(Color.DARKGRAY);
+                }
+            }
+        });
+
+        Stage newStage = new Stage();
+        newStage.setTitle("Blackboard");
+
+        VBox vbox = new VBox();
+        Scene scene = new Scene(vbox);
+
+        vbox.getChildren().add(gridPane);
+
+        newStage.setScene(scene);
+        newStage.setResizable(false);
+
+        always_on_top_cbx.selectedProperty().addListener((observable, oldValue, newValue) -> {
+            newStage.setAlwaysOnTop(newValue);
+        });
+
+        newStage.setAlwaysOnTop(always_on_top_cbx.isSelected());
+
+        newStage.setOnCloseRequest(event -> {
+            selectedCells.clear();
+        });
+
+        newStage.show();
     }
 }

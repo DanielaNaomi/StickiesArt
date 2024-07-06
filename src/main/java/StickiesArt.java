@@ -15,16 +15,12 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 
 @ExtensionInfo(
         Title = "StickiesArt",
         Description = "Art with stickies created with love",
-        Version = "1.5",
+        Version = "1.6",
         Author = "DanielaNaomi"
 )
 
@@ -59,6 +55,11 @@ public class StickiesArt extends ExtensionForm {
 
     public CheckBox draw_cbx;
     public Set<Integer> selectedCells = new HashSet<>();
+    private final Map<String, Color> colors = new HashMap<>();
+    private Stage blackboardStage;
+    private boolean isBlackboardOpen = false;
+    private Color selectedColor = Color.web("FFFF33");
+    private final Map<Integer, Color> cellColorMap = new HashMap<>();
 
     @Override
     protected void initExtension() {
@@ -66,6 +67,7 @@ public class StickiesArt extends ExtensionForm {
             if (host_postit.containsKey(host))
                 uniqueId = host_postit.get(host);
         });
+        sendToServer(new HPacket("GetHeightMap", HMessage.Direction.TOSERVER));
         intercept(HMessage.Direction.TOCLIENT, "Items", this::Items);
         intercept(HMessage.Direction.TOSERVER, "OpenFlatConnection", this::OpenFlatConnection);
 
@@ -80,6 +82,16 @@ public class StickiesArt extends ExtensionForm {
         setTextFieldDefault(basel1, "0");
         setTextFieldDefault(basel2, "0");
         setTextFieldDefault(increment, "2");
+    }
+
+    @Override
+    protected void onHide() {
+        if (blackboardStage != null) {
+            blackboardStage.close();
+            isBlackboardOpen = false;
+            selectedColor = Color.web("FFFF33");
+            selectedCells.clear();
+        }
     }
 
     public void toggleAlwaysOnTop() {
@@ -173,12 +185,31 @@ public class StickiesArt extends ExtensionForm {
                     HPacket movePacket = new HPacket("MoveWallItem", HMessage.Direction.TOSERVER);
                     movePacket.appendInt(items.get(itemIndex));
                     movePacket.appendString(":w=" + newW1 + "," + newW2 + " l=" + newX + "," + newY + " " + lOrR);
+                    sendToServer(movePacket);
+
                     try {
                         Thread.sleep(125);
                     } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        Thread.currentThread().interrupt();
                     }
-                    sendToServer(movePacket);
+
+                    Color cellColor = getCellColor(index);
+                    String colorCode = String.format("%02X%02X%02X",
+                            (int) (cellColor.getRed() * 255),
+                            (int) (cellColor.getGreen() * 255),
+                            (int) (cellColor.getBlue() * 255));
+
+                    HPacket colorPacket = new HPacket("SetItemData", HMessage.Direction.TOSERVER);
+                    colorPacket.appendInt(items.get(itemIndex));
+                    colorPacket.appendString(colorCode);
+                    colorPacket.appendString("");
+                    sendToServer(colorPacket);
+
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
 
                     usedItems.add(items.get(itemIndex));
                     usedItemsSet.add(items.get(itemIndex));
@@ -270,36 +301,64 @@ public class StickiesArt extends ExtensionForm {
     }
 
     public void handleopenblackboard() {
+        if (isBlackboardOpen) {
+            return;
+        }
+
         GridPane gridPane = new GridPane();
+
+        colors.put("Blue", Color.web("#9CCEFF"));
+        colors.put("Pink", Color.web("#FF9CFF"));
+        colors.put("Green", Color.web("#9CFF9C"));
+        colors.put("Yellow", Color.web("#FFFF33"));
+
+        List<String> colorOrder = Arrays.asList("Blue", "Pink", "Green", "Yellow");
+
+        int rowIndex = 0;
+        for (String colorName : colorOrder) {
+            Button colorButton = new Button();
+            colorButton.setStyle("-fx-background-color: #" + colors.get(colorName).toString().substring(2, 8) + ";");
+            colorButton.setMinSize(80, 40);
+            colorButton.setMaxSize(80, 40);
+
+            colorButton.setOnAction(event -> selectedColor = colors.get(colorName));
+
+            gridPane.add(colorButton, 0, rowIndex);
+            rowIndex++;
+        }
 
         for (int i = 0; i < 12; i++) {
             for (int j = 0; j < 12; j++) {
                 Rectangle cell = new Rectangle(40, 40);
-                cell.setFill(Color.DARKGRAY);
-                cell.setStroke(Color.BLACK);
+                cell.setFill(Color.BLACK);
+                cell.setStroke(Color.DARKGRAY);
                 int index = i * 12 + j;
 
                 cell.setOnMousePressed(event -> {
                     if (event.getButton() == MouseButton.PRIMARY) {
                         selectedCells.add(index);
-                        cell.setFill(Color.YELLOW);
+                        cell.setFill(selectedColor);
+                        cellColorMap.put(index, selectedColor);
                     } else if (event.getButton() == MouseButton.SECONDARY) {
                         selectedCells.remove(index);
-                        cell.setFill(Color.DARKGRAY);
+                        cell.setFill(Color.BLACK);
+                        cellColorMap.remove(index);
                     }
                 });
 
                 cell.setOnMouseDragged(event -> {
                     if (event.getButton() == MouseButton.PRIMARY) {
                         selectedCells.add(index);
-                        cell.setFill(Color.YELLOW);
+                        cell.setFill(selectedColor);
+                        cellColorMap.put(index, selectedColor);
                     } else if (event.getButton() == MouseButton.SECONDARY) {
                         selectedCells.remove(index);
-                        cell.setFill(Color.DARKGRAY);
+                        cell.setFill(Color.BLACK);
+                        cellColorMap.remove(index);
                     }
                 });
 
-                gridPane.add(cell, j, i);
+                gridPane.add(cell, j + 1, i);
             }
         }
 
@@ -307,38 +366,47 @@ public class StickiesArt extends ExtensionForm {
             Node source = event.getPickResult().getIntersectedNode();
             if (source instanceof Rectangle) {
                 Rectangle cell = (Rectangle) source;
-                int index = GridPane.getRowIndex(cell) * 12 + GridPane.getColumnIndex(cell);
+                int index = GridPane.getRowIndex(cell) * 12 + GridPane.getColumnIndex(cell) - 1;
                 if (event.isPrimaryButtonDown()) {
                     selectedCells.add(index);
-                    cell.setFill(Color.YELLOW);
+                    cell.setFill(selectedColor);
+                    cellColorMap.put(index, selectedColor);
                 } else if (event.isSecondaryButtonDown()) {
                     selectedCells.remove(index);
-                    cell.setFill(Color.DARKGRAY);
+                    cell.setFill(Color.BLACK);
+                    cellColorMap.remove(index);
                 }
             }
         });
 
-        Stage newStage = new Stage();
-        newStage.setTitle("Blackboard");
+        blackboardStage = new Stage();
+        blackboardStage.setTitle("Blackboard");
 
         VBox vbox = new VBox();
         Scene scene = new Scene(vbox);
 
         vbox.getChildren().add(gridPane);
 
-        newStage.setScene(scene);
-        newStage.setResizable(false);
+        blackboardStage.setScene(scene);
+        blackboardStage.setResizable(false);
 
         always_on_top_cbx.selectedProperty().addListener((observable, oldValue, newValue) -> {
-            newStage.setAlwaysOnTop(newValue);
+            blackboardStage.setAlwaysOnTop(newValue);
         });
 
-        newStage.setAlwaysOnTop(always_on_top_cbx.isSelected());
+        blackboardStage.setAlwaysOnTop(always_on_top_cbx.isSelected());
 
-        newStage.setOnCloseRequest(event -> {
+        blackboardStage.setOnCloseRequest(event -> {
+            selectedColor = Color.web("FFFF33");
             selectedCells.clear();
+            isBlackboardOpen = false;
         });
 
-        newStage.show();
+        blackboardStage.show();
+        isBlackboardOpen = true;
+    }
+
+    private Color getCellColor(int index) {
+        return cellColorMap.getOrDefault(index, Color.web("FFFF33"));
     }
 }

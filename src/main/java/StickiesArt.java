@@ -15,12 +15,20 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Random;
+import java.util.Set;
+import java.util.Map;
+import java.util.List;
+import java.util.Arrays;
+import java.util.ArrayList;
 
 @ExtensionInfo(
         Title = "StickiesArt",
         Description = "Art with stickies created with love",
-        Version = "1.6",
+        Version = "1.7",
         Author = "DanielaNaomi"
 )
 
@@ -56,6 +64,11 @@ public class StickiesArt extends ExtensionForm {
     public CheckBox draw_cbx;
     public Set<Integer> selectedCells = new HashSet<>();
     private final Map<String, Color> colors = new HashMap<>();
+    public Button buttonopenblackboard;
+    public CheckBox blueletters_cbx;
+    public CheckBox pinkletters_cbx;
+    public CheckBox greenletters_cbx;
+    public CheckBox yellowletters_cbx;
     private Stage blackboardStage;
     private boolean isBlackboardOpen = false;
     private Color selectedColor = Color.web("FFFF33");
@@ -155,6 +168,8 @@ public class StickiesArt extends ExtensionForm {
     }
 
     private void handleDrawGrid(int baseW1, int baseW2, int baseL1, int baseL2) {
+        disableGridPane();
+
         int offsetW2 = 0;
         int itemIndex = 0;
 
@@ -190,7 +205,7 @@ public class StickiesArt extends ExtensionForm {
                     try {
                         Thread.sleep(125);
                     } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
+                        e.printStackTrace();
                     }
 
                     Color cellColor = getCellColor(index);
@@ -208,7 +223,7 @@ public class StickiesArt extends ExtensionForm {
                     try {
                         Thread.sleep(500);
                     } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
+                        e.printStackTrace();
                     }
 
                     usedItems.add(items.get(itemIndex));
@@ -219,11 +234,32 @@ public class StickiesArt extends ExtensionForm {
                 }
             }
         }
+        enableGridPane();
+    }
+
+    private void disableGridPane() {
+        if (blackboardStage != null) {
+            blackboardStage.getScene().getRoot().setDisable(true);
+        }
+    }
+
+    private void enableGridPane() {
+        if (blackboardStage != null) {
+            blackboardStage.getScene().getRoot().setDisable(false);
+        }
     }
 
     public void handlegoart(String text, int baseW1, int baseW2, int baseL1, int baseL2, int incrementValue) {
         int offsetW2 = 0;
         int itemIndex = 0;
+
+        List<String> selectedColors = new ArrayList<>();
+        if (blueletters_cbx.isSelected()) selectedColors.add("9CCEFF");
+        if (pinkletters_cbx.isSelected()) selectedColors.add("FF9CFF");
+        if (greenletters_cbx.isSelected()) selectedColors.add("9CFF9C");
+        if (yellowletters_cbx.isSelected()) selectedColors.add("FFFF33");
+
+        int colorIndex = 0;
 
         for (char letter : text.toCharArray()) {
             String[] positions = LetterMapper.getLetterMapping(letter);
@@ -253,12 +289,28 @@ public class StickiesArt extends ExtensionForm {
                         HPacket movePacket = new HPacket("MoveWallItem", HMessage.Direction.TOSERVER);
                         movePacket.appendInt(items.get(itemIndex));
                         movePacket.appendString(":w=" + newW1 + "," + newW2 + " l=" + newX + "," + newY + " " + lOrR);
+                        sendToServer(movePacket);
                         try {
                             Thread.sleep(125);
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
-                        sendToServer(movePacket);
+
+                        if (!selectedColors.isEmpty()) {
+                            HPacket colorPacket = new HPacket("SetItemData", HMessage.Direction.TOSERVER);
+                            colorPacket.appendInt(items.get(itemIndex));
+                            colorPacket.appendString(selectedColors.get(colorIndex));
+                            colorPacket.appendString("");
+                            sendToServer(colorPacket);
+
+                            colorIndex = (colorIndex + 1) % selectedColors.size();
+
+                            try {
+                                Thread.sleep(500);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                        }
 
                         usedItems.add(items.get(itemIndex));
                         usedItemsSet.add(items.get(itemIndex));
@@ -287,12 +339,13 @@ public class StickiesArt extends ExtensionForm {
                 HPacket movePacket = new HPacket("MoveWallItem", HMessage.Direction.TOSERVER);
                 movePacket.appendInt(itemId);
                 movePacket.appendString(":w=" + newW1 + "," + newW2 + " l=" + newX + "," + newY + " l");
+                sendToServer(movePacket);
+
                 try {
                     Thread.sleep(125);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                sendToServer(movePacket);
             }
 
             usedItems.clear();

@@ -23,5 +23,9 @@
       <CheckBox fx:id="always_on_top_cbx" layoutX="457.0" layoutY="193.0" mnemonicParsing="false" onAction="#toggleAlwaysOnTop" text="Always on top" />
       <CheckBox fx:id="draw_cbx" layoutX="457.0" layoutY="164.0" mnemonicParsing="false" text="Draw" />
       <Button fx:id="buttonopenblackboard" layoutX="409.0" layoutY="31.0" mnemonicParsing="false" onAction="#handleopenblackboard" prefHeight="50.0" prefWidth="146.0" text="Open Blackboard" />
+      <CheckBox fx:id="blueletters_cbx" layoutX="274.0" layoutY="93.0" mnemonicParsing="false" text="Blue Letters" />
+      <CheckBox fx:id="pinkletters_cbx" layoutX="387.0" layoutY="93.0" mnemonicParsing="false" text="Pink Letters" />
+      <CheckBox fx:id="greenletters_cbx" layoutX="274.0" layoutY="119.0" mnemonicParsing="false" text="Green Letters" />
+      <CheckBox fx:id="yellowletters_cbx" layoutX="387.0" layoutY="119.0" mnemonicParsing="false" text="Yellow Letters" />
    </children>
 </AnchorPane>
